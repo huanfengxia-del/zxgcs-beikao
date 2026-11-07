@@ -6438,8 +6438,8 @@ App.Views = App.Views || {};
     if (!e) return '<div class="empty"><b>本节暂无精华考点</b><span class="small">可以切到「讲义正文」，或直接问导师</span></div>';
     const h = [];
     if (e.pts && e.pts.length) {
-      h.push('<div class="note blue" style="margin-bottom:14px"><span class="lab">要点</span><div><ul class="lst" style="display:grid;gap:6px">' +
-        e.pts.map((x) => '<li style="padding-left:15px;position:relative">' + U.rich(x) + '</li>').join('') + '</ul></div></div>');
+      h.push('<div class="note blue" style="margin-bottom:14px"><span class="lab">要点</span><div><ul class="lst pt-list" style="display:grid;gap:6px">' +
+        e.pts.map((x) => '<li style="padding-left:15px;position:relative">' + ptRich(x) + '</li>').join('') + '</ul></div></div>');
     }
     if (e.mind && e.mind.length) {
       h.push('<h2 style="font-size:15px;margin:18px 0 10px">知识结构</h2>');
