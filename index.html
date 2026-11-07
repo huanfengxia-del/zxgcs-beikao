@@ -6055,9 +6055,12 @@ App.Views = App.Views || {};
     h.push('<div class="fig-grid">');
     figs.slice(0, 6).forEach(function (f, i) {
       /* 不再显示 PDF 文件名（f.src）：那是溯源信息，和学习无关 */
-      h.push('<figure class="fig"><button class="fig-zoom" data-act="zoom-fig" data-src="' + U.esc(f.file) + '" data-cap="' + U.esc(f.cap || '') + '">' +
-        '<img src="' + U.esc(f.file) + '" alt="' + U.esc(f.cap || '资料图') + '" loading="lazy"></button>' +
-        '<figcaption><b>' + U.esc(f.cap || '资料图 ' + (i + 1)) + '</b></figcaption></figure>');
+      /* 同一节常有多张图，抽出来的 cap 都一样（「示意图：本节名」），加序号才分得清 */
+      const base = f.cap || ('资料图');
+      const capText = figs.length > 1 ? base + ' · 图 ' + (i + 1) : base;
+      h.push('<figure class="fig"><button class="fig-zoom" data-act="zoom-fig" data-src="' + U.esc(f.file) + '" data-cap="' + U.esc(capText) + '">' +
+        '<img src="' + U.esc(f.file) + '" alt="' + U.esc(capText) + '" loading="lazy"></button>' +
+        '<figcaption><b>' + U.esc(capText) + '</b></figcaption></figure>');
     });
     h.push('</div>');
     return h.join('') + '</div>';
