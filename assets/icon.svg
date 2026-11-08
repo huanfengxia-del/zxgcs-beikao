@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="96" fill="#fcfcfa"/>
+  <rect x="28" y="28" width="456" height="456" rx="72" fill="none" stroke="#141719" stroke-width="10"/>
+  <rect x="56" y="56" width="400" height="400" rx="52" fill="#1d4ed8"/>
+  <text x="256" y="330" font-family="Georgia, 'Times New Roman', serif" font-size="248" font-weight="700" fill="#ffffff" text-anchor="middle">咨</text>
+</svg>

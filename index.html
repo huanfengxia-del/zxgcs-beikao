@@ -2,8 +2,15 @@
 <html lang="zh-CN" data-theme="light">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fcfcfa">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="备考台">
+<link rel="manifest" href="assets/manifest.json">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
 <title>咨询工程师备考台 · 2027</title>
 <script>
 /* 先定主题再上样式，避免首屏闪白 */
@@ -9695,6 +9702,9 @@ App.Agents = (function () {
     /* 主题按钮图标与当前主题同步 */
     syncThemeIcon();
 
+    /* 如果这一页是从「本机中继」打开的，模型接口就在同源下，自动接好 */
+    autoWireRelay();
+
     /* 全局快捷键 */
     document.addEventListener('keydown', function (e) {
       const mod = e.ctrlKey || e.metaKey;
@@ -9755,6 +9765,28 @@ App.Agents = (function () {
       const b = document.getElementById('boot');
       if (b) b.remove();
     }
+  }
+
+  /* 从「本机中继」打开时（页面与 /v1 同源），自动把模型接口接上，用户不用再填设置。
+     判断依据：GET /health 返回 {ok:true, upstream:'http://127.0.0.1:3425'}。 */
+  function autoWireRelay() {
+    if (!location.protocol.startsWith('http')) return;      /* file:// 直接跳过 */
+    if (App.Agents.bridge()) return;                         /* 桌面版走主进程，不用管 */
+
+    fetch('health', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j || !j.ok || !j.upstream) return;
+        const p = S.state.provider || {};
+        const base = location.origin + '/v1';
+        /* 已经手动配过别的接口就别覆盖 */
+        if (p.mode === 'custom' && p.base && p.base.indexOf(location.origin) !== 0) return;
+        if (p.mode === 'magpie' && p.base) return;
+        S.setProvider({ mode: 'custom', base: base, model: p.model || 'auto/gemini-3.8-flash', key: p.key || 'magpie', stream: true });
+        /* 首屏可能已经画完（状态条/设置页要反映新状态），重画一次 */
+        App.Router.refresh();
+      })
+      .catch(function () { /* 不是中继页面，静默 */ });
   }
 
   /* 「问导师」：把当前页面的上下文带给伴学导师 */
