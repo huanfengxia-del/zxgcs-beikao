@@ -4,7 +4,7 @@
    2) 第二次打开不再重新下载 8MB 页面（隧道带宽小，首开要 30 秒）
    3) 新版本发布后不用手动清缓存：先问一个几字节的 build.txt，版本变了才重下页面
    策略：页面走「缓存优先 + 版本校验」，静态资源走 cache-first（图、图标基本不变）。 */
-const BUILD = 'mw79h1xm';
+const BUILD = 'mw79nfju';
 const VER = 'beikao-' + BUILD;
 const CORE = ['./', './index.html', './manifest.json', './build.txt', './assets/icon-180.png', './assets/icon-512.png'];
 

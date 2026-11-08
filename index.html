@@ -30,7 +30,10 @@
   if (!('serviceWorker' in navigator)) return;
   var hadController = !!navigator.serviceWorker.controller;
   window.addEventListener('load', function () {
-    navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function () {});
+    navigator.serviceWorker.register('sw.js', { scope: './' }).then(function (reg) {
+      /* 每次打开都问一次 sw.js 有没有变，别等浏览器自己 24 小时才查 */
+      if (reg && reg.update) reg.update().catch(function () {});
+    }).catch(function () {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', function () {
     if (!hadController) return;                       /* 首次安装不刷，省一次 8MB */
