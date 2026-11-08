@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="备考台">
-<link rel="manifest" href="assets/manifest.json">
+<link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="assets/icon-180.png">
 <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
 <title>咨询工程师备考台 · 2027</title>
@@ -21,6 +21,15 @@
     var t = (st && st.theme) || (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', t);
   } catch (e) {}
+})();
+
+/* 注册 Service Worker：手机第二次打开不再重下 8MB 页面（隧道带宽小） */
+(function () {
+  if (!location.protocol.startsWith('http')) return;
+  if (!('serviceWorker' in navigator)) return;
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function () {});
+  });
 })();
 </script>
 <style>
