@@ -1189,10 +1189,28 @@ a.stat-link .d { color: var(--blue); }
 .week.now { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
 .week.now .week-hd { background: var(--ink); color: var(--paper); }
 .week.now .week-hd * { color: inherit !important; }
+/* 本周表头上的徽标：反白底 + 纸色字，别让「本周 / 分值」在深底上糊成一片 */
+.week.now .week-hd .badge,
+.week.now .week-hd .week-pts {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-color: rgba(255, 255, 255, 0.42) !important;
+  color: var(--paper) !important;
+}
 .week-hd {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
   padding: 8px 13px; border-bottom: 1px solid var(--line); background: var(--paper-2);
+  cursor: pointer; list-style: none;
 }
+.week-hd::-webkit-details-marker { display: none; }
+.week-hd::after {
+  content: ""; width: 5px; height: 5px; flex: none; margin-left: 2px;
+  border-right: 1.5px solid var(--ink-4); border-bottom: 1.5px solid var(--ink-4);
+  transform: rotate(-45deg); transition: transform var(--t-fast);
+}
+.week[open] > .week-hd::after { transform: rotate(45deg); }
+.week.now > .week-hd::after { border-color: var(--paper); }
+.week-hd:hover { background: var(--paper-3); }
+.week:not([open]) > .week-hd { border-bottom: 0; }
 .week-hd .w { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; }
 .week-hd .ph { font-size: 11.5px; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
 .week-hd .ph::before { content: ""; width: 7px; height: 7px; border-radius: 1px; background: var(--c1); }
@@ -1208,6 +1226,31 @@ a.stat-link .d { color: var(--blue); }
   padding-top: 2px; letter-spacing: 0.02em;
 }
 .week-bd .task.on .txt { color: var(--ink-4); text-decoration: line-through; }
+
+/* 周任务表：按阶段折叠 */
+.wk-ph { border-top: 1px solid var(--line); }
+.wk-ph:first-of-type { border-top: 0; }
+.wk-ph-hd {
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  padding: 11px 16px; background: var(--paper-2); list-style: none;
+  font-size: 12.5px; color: var(--ink-2);
+}
+.wk-ph-hd::-webkit-details-marker { display: none; }
+.wk-ph-hd::before {
+  content: ""; width: 6px; height: 6px; flex: none;
+  border-right: 1.6px solid var(--ink-3); border-bottom: 1.6px solid var(--ink-3);
+  transform: rotate(-45deg); transition: transform var(--t-fast); margin-right: -2px;
+}
+.wk-ph[open] > .wk-ph-hd::before { transform: rotate(45deg); }
+.wk-ph-hd:hover { background: var(--paper-3); }
+.wk-ph-hd .eyebrow { flex: none; }
+.wk-ph-goal { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wk-ph-meta {
+  margin-left: auto; flex: none; font-size: 10px; letter-spacing: 0.04em;
+  color: var(--ink-3); padding: 1px 7px; border: 1px solid var(--line-2);
+  border-radius: 3px; background: var(--paper);
+}
+.wk-ph-bd { display: grid; gap: 8px; padding: 10px 14px 14px; background: var(--paper); }
 
 /* 周 / 阶段：覆盖的章节分值 */
 .week-pts {
@@ -3393,6 +3436,27 @@ App.Data = (function () {
   const qBySection = new Map();
   const qByChapter = new Map();
 
+  /* 题库是从网上流传的 PDF 里抽的，题干/选项/解析里混着培训机构的广告水印：
+     「名师面授精华…绝密QQ/微：/384货178」「建设工程教育网www.jianshe99.com…4008105999」。
+     这些串会跟着选项一起渲染出来（用户看到的是「技术合同 VX/QQ:」这种选项），
+     所以入库时按水印关键词截断，只保留前半段真正的题目内容。 */
+  const JUNK = [
+    '名师面授', '绝密', 'VX/QQ', 'QQ/微', '微信', '公众号', '扫码', 'jianshe99',
+    'www.', '4008105999', '客服热线', '咨询电话', '版权所有', '彭老师课堂'
+  ];
+  function cleanJunk(s) {
+    const str = String(s == null ? '' : s);
+    let idx = -1;
+    JUNK.forEach(function (m) {
+      const i = str.indexOf(m);
+      if (i >= 0 && (idx < 0 || i < idx)) idx = i;
+    });
+    if (idx < 0) return str;
+    const head = str.slice(0, idx).replace(/[\s，,、:：;；/\\\-]+$/, '').trim();
+    /* 截完太短说明整条都是水印（如选项只剩空串），原样保留更安全 */
+    return head.length >= 1 ? head : str;
+  }
+
   function examPlan(meta) {
     const s = String(meta.q || '');
     const single = /单选\s*(\d+)\s*题/.exec(s);
@@ -3606,10 +3670,12 @@ App.Data = (function () {
         course: d.key,
         ch: q.ch || 0,
         tp: q.tp || 'single',
-        q: q.q || '',
-        o: q.o || [],
+        q: cleanJunk(q.q || ''),
+        o: (q.o || []).map(function (o) {
+          return { k: o.k, v: cleanJunk(o.v) };
+        }),
         a: String(q.a || '').trim().toUpperCase(),
-        e: q.e || '',
+        e: cleanJunk(q.e || ''),
         src: q.src || ''
       };
       item.sectionId = null;
@@ -7531,6 +7597,9 @@ App.Views = App.Views || {};
   const TOTAL = (L.TOTAL_WEEKS || 31);
   const START = S.state.planStart || L.PLAN_START || '2026-09-07';
 
+  /* 折叠状态：刷新后（勾选任务会触发 refresh）保持用户展开的那几段 */
+  const openPh = {}, openWk = {};
+
   function weekInfo() {
     const now = U.weekIndex(START, U.today());
     return { now: U.clamp(now, -3, TOTAL + 4), total: TOTAL };
@@ -7719,11 +7788,17 @@ App.Views = App.Views || {};
         if (!groups[key]) groups[key] = { ph: ph, weeks: [] };
         groups[key].weeks.push(w);
       }
+      const curPhaseKey = (phaseOf(Math.max(1, now)) || {}).id || 'PX';
       Object.keys(groups).forEach(function (k) {
         const g = groups[k];
-        h.push('<div style="padding:12px 16px 6px;border-top:1px solid var(--line);background:var(--paper-2)">' +
-          '<span class="eyebrow">' + U.esc((g.ph || {}).id || '') + ' · ' + U.esc((g.ph || {}).name || '') + '</span>' +
-          '<span class="tiny faint" style="margin-left:10px">' + U.esc((g.ph || {}).goal || '') + '</span></div>');
+        const isCurPh = k === curPhaseKey;
+        const wkCnt = g.weeks.filter(function (w) { return weekTasks(w).length; }).length;
+        const phOpen = (k in openPh) ? openPh[k] : isCurPh;
+        h.push('<details class="wk-ph" data-ph="' + U.esc(k) + '"' + (phOpen ? ' open' : '') + '>');
+        h.push('<summary class="wk-ph-hd"><span class="eyebrow">' + U.esc((g.ph || {}).id || '') + ' · ' + U.esc((g.ph || {}).name || '') + '</span>' +
+          '<span class="tiny faint wk-ph-goal">' + U.esc((g.ph || {}).goal || '') + '</span>' +
+          '<span class="wk-ph-meta mono">' + wkCnt + ' 周</span></summary>');
+        h.push('<div class="wk-ph-bd">');
         g.weeks.forEach(function (w) {
           const tasks = weekTasks(w);
           if (!tasks.length) return;
@@ -7731,11 +7806,12 @@ App.Views = App.Views || {};
           const doneCn = tasks.filter((t, i) => S.isTaskDone(w, i)).length;
           const refs = weekRefs(w).sort(function (a, b) { return b.pts - a.pts; });
           const ptsSum = refs.reduce(function (n, r) { return n + r.pts; }, 0);
-          h.push('<div class="week ' + (isCur ? 'now' : '') + '" data-week="' + w + '">');
-          h.push('<div class="week-hd"><b>W' + U.pad(w, 2) + '</b><span class="tiny faint mono">' + weekRange(w) + '</span>' +
+          const wkOpen = (w in openWk) ? openWk[w] : isCur;
+          h.push('<details class="week ' + (isCur ? 'now' : '') + '" data-week="' + w + '"' + (wkOpen ? ' open' : '') + '>');
+          h.push('<summary class="week-hd"><b>W' + U.pad(w, 2) + '</b><span class="tiny faint mono">' + weekRange(w) + '</span>' +
             (isCur ? '<span class="badge blue">本周</span>' : '') +
             (ptsSum ? '<span class="week-pts mono" title="本周覆盖的章节分值合计（同章只算一次）">' + ptsSum.toFixed(1) + ' 分</span>' : '') +
-            '<span style="flex:1"></span><span class="tiny mono faint">' + doneCn + '/' + tasks.length + '</span></div>');
+            '<span style="flex:1"></span><span class="tiny mono faint">' + doneCn + '/' + tasks.length + '</span></summary>');
           if (refs.length) h.push('<div class="week-refs">' + refChips(refs, 6) + '</div>');
           h.push('<div class="week-bd">');
           tasks.forEach(function (t, i) {
@@ -7743,8 +7819,9 @@ App.Views = App.Views || {};
             h.push('<label class="task ' + (on ? 'on' : '') + '"><button class="tick ' + (on ? 'on' : '') + '" data-act="task" data-w="' + w + '" data-i="' + i + '">' + UI.icon('check') + '</button>' +
               '<span class="d">' + DOW[U.clamp(t.dow, 0, 6)] + '</span><span class="x">' + U.esc(t.t) + '</span></label>');
           });
-          h.push('</div></div>');
+          h.push('</div></details>');
         });
+        h.push('</div></details>');
       });
       h.push('</div></section>');
 
@@ -7765,7 +7842,20 @@ App.Views = App.Views || {};
     },
 
     mount: function (root) {
+      /* 记住用户展开/收起了哪几段、哪几周（勾选任务会 refresh，不能弹回默认） */
+      function syncOpen() {
+        U.qsa('details.wk-ph', root).forEach(function (d) { openPh[d.getAttribute('data-ph')] = d.open; });
+        U.qsa('details.week', root).forEach(function (d) { openWk[+d.getAttribute('data-week')] = d.open; });
+      }
+      root.addEventListener('toggle', function (e) {
+        const d = e.target;
+        if (!d || d.tagName !== 'DETAILS') return;
+        if (d.classList.contains('wk-ph')) openPh[d.getAttribute('data-ph')] = d.open;
+        else if (d.classList.contains('week')) openWk[+d.getAttribute('data-week')] = d.open;
+      }, true);
+
       root.addEventListener('click', function (e) {
+        syncOpen();
         const el = e.target.closest('[data-act]');
         if (!el) return;
         const act = el.getAttribute('data-act');
@@ -8935,16 +9025,46 @@ App.Agents = (function () {
     return scored.slice(0, n || 3);
   }
 
+  /* extras.json（从本机 PDF 讲义正文抽的句子级考点）里本节的那一条 */
+  function extrasOf(sec) {
+    const X = window.EXTRAS;
+    if (!X || !X.bySec || !sec) return null;
+    return X.bySec[sec.id] || null;
+  }
+
+  function avgLen(arr) {
+    if (!arr.length) return 0;
+    return arr.reduce(function (a, b) { return a + String(b).length; }, 0) / arr.length;
+  }
+
   function ptsOf(sec) {
     const e = sec.essec;
-    const out = [];
+    let out = [];
     if (e && e.pts) e.pts.forEach((p) => out.push(p));
+    out = out.filter(Boolean);
+    /* 讲义抽出来的 pts 有时只是小节标题（c1 的 2.1 就是「市场需求」「市场供给」
+       「供给的含义」…），直接拿来重排会变成「标题 + 考试就考这半句」的空壳。
+       extras 里是从 PDF 正文抽的句子级考点（163 节 1482 条），条数与长度都够
+       就以它为准，讲义的 pts 只在 extras 缺失时兜底。 */
+    const xp = ((extrasOf(sec) || {}).points || []).filter(Boolean);
+    if (xp.length >= 3 && (out.length < 3 || avgLen(out) < 12)) out = xp.slice();
     if (!out.length && sec.blocks) {
       sec.blocks.forEach(function (b) {
         if (b.t === 'zk' && b.items) b.items.forEach((x) => out.push(x));
       });
     }
     return out.filter(Boolean).slice(0, 6);
+  }
+
+  /* 从一整句考点里取一个短标签：表格列、星级表、口诀、课后提问都要短标签，
+     直接 slice 会在句子中间截断（「市场价格高于均衡」），所以先去序号头、
+     取第一个分句，再按长度收口。 */
+  function kwOf(p, n, noDots) {
+    let s = String(p == null ? '' : p).replace(/\*\*/g, '').trim();
+    s = s.replace(/^(?:[（(]?[0-9一二三四五六七八九十]{1,2}[)）.、．]\s*|[①-⑳]\s*)/, '');
+    const cut = (s.split(/[，,；;：:。]/)[0] || s).replace(/[。；]$/, '').trim();
+    const lim = n || 12;
+    return cut.length > lim ? cut.slice(0, lim) + (noDots ? '' : '…') : cut;
   }
 
   /* 意图识别：本地模式下把「怎么考」「解释X」「出几道题」这类话理解成具体动作 */
@@ -9182,7 +9302,9 @@ App.Agents = (function () {
   /* ---------- 讲师人格化排版：同一个知识点，按各讲师的讲义写法重排 ---------- */
   function pPts(s, n) {
     return ptsOf(s).slice(0, n || 6).map(function (p) {
-      return String(p).replace(/\*\*/g, '').replace(/[。；]$/, '').trim();
+      return String(p).replace(/\*\*/g, '')
+        .replace(/^(?:[（(]?[0-9一二三四五六七八九十]{1,2}[)）.、．]\s*|[①-⑳]\s*)/, '')
+        .replace(/[。；]$/, '').trim();
     }).filter(Boolean);
   }
 
@@ -9195,8 +9317,17 @@ App.Agents = (function () {
 
   function pExample(s) {
     const ex = (s.exq || [])[0];
-    if (!ex) return null;
-    return { q: String(ex.q || '').replace(/（\s*）/g, '（ ）').slice(0, 120), a: ex.a || '', e: String(ex.e || '').replace(/\*\*/g, '').slice(0, 110) };
+    if (ex) {
+      return { q: String(ex.q || '').replace(/（\s*）/g, '（ ）').slice(0, 120), a: ex.a || '', e: String(ex.e || '').replace(/\*\*/g, '').slice(0, 110) };
+    }
+    /* 讲义正文没带例题的小节（163 节里 70 节），用 extras 从 PDF 习题集抽出来的题补上 */
+    const xq = ((extrasOf(s) || {}).questions || [])[0];
+    if (!xq) return null;
+    return {
+      q: String(xq.q || '').replace(/（\s*）/g, '（ ）').slice(0, 120),
+      a: xq.a || '',
+      e: String(xq.e || '').replace(/\*\*/g, '').slice(0, 110)
+    };
   }
 
   /* 按讲师人格把一节内容重排成他自己的讲义体例 */
@@ -9210,13 +9341,16 @@ App.Agents = (function () {
       return out;
     }
     if (t.id === 'zhangkb') {
-      const key = pts.map(function (p) { return p.slice(0, 6); }).join('·');
+      /* 口诀只留每条的 4 字头，太长念不出来；口诀里不加省略号，念起来才顺 */
+      const key = pts.map(function (p) { return kwOf(p, 4, true); }).join('·');
       out.push('**口诀**：' + key);
       out.push('');
       out.push('（大白话：把上面这几条按顺序念三遍，脑子里先有骨架，再往里填细节。）');
       out.push('');
       out.push('**逐条对照**：');
-      pts.forEach(function (p, i) { out.push((i + 1) + '. ' + p + '　→ 考试就考这半句。'); });
+      pts.forEach(function (p, i) {
+        out.push((i + 1) + '. **' + kwOf(p, 14) + '**　' + p);
+      });
       if (ex) {
         out.push('');
         out.push('**【例题·单选】**' + ex.q);
@@ -9234,7 +9368,7 @@ App.Agents = (function () {
       out.push('');
       out.push('| 序号 | 要点 | 关键词 |');
       out.push('| --- | --- | --- |');
-      pts.forEach(function (p, i) { out.push('| ' + (i + 1) + ' | ' + p.slice(0, 40) + ' | ' + p.slice(0, 6) + ' |'); });
+      pts.forEach(function (p, i) { out.push('| ' + (i + 1) + ' | ' + p + ' | ' + kwOf(p, 10) + ' |'); });
       if (pts.length > 3) {
         out.push('');
         out.push('其余（' + (pts.length - 3) + ' 条）同属并列要点，编号顺序即背诵顺序。');
@@ -9246,7 +9380,7 @@ App.Agents = (function () {
         out.push('（' + ['一', '二', '三', '四', '五', '六'][i] + '）' + p);
         out.push('');
       });
-      out.push('**这一讲的记忆顺序**：' + pts.map(function (p) { return p.slice(0, 4); }).join(' → '));
+      out.push('**这一讲的记忆顺序**：' + pts.map(function (p) { return kwOf(p, 6); }).join(' → '));
     } else if (t.id === 'lizhicheng') {
       out.push('**考点框架**：本节围绕「' + s.name + '」，共 ' + pts.length + ' 个考点，前两个是必背级。');
       out.push('');
@@ -9257,7 +9391,7 @@ App.Agents = (function () {
       });
       out.push('**课后提问**：');
       out.push('');
-      pts.slice(0, 3).forEach(function (p, i) { out.push((i + 1) + '. ' + p.slice(0, 24) + '…这一条的适用条件是什么？'); });
+      pts.slice(0, 3).forEach(function (p, i) { out.push((i + 1) + '. 「' + kwOf(p, 16) + '」这一条的适用条件是什么？'); });
     } else if (t.id === 'linxuan') {
       const ch = h.c.chapterById ? h.c.chapterById.get(s.ch) : null;
       out.push('**本章考情**：' + h.c.short + ' 第' + s.ch + '章「' + s.name + '」在本章占 ' +
@@ -9270,7 +9404,7 @@ App.Agents = (function () {
       out.push('**一句话**：这节的分值摆在这，不背就等于把分送出去。');
     } else if (t.id === 'chuanyang') {
       pts.slice(0, 4).forEach(function (p, i) {
-        out.push('**问 ' + (i + 1) + '：' + p.slice(0, 26) + '…是什么/包括哪些？**');
+        out.push('**问 ' + (i + 1) + '：「' + kwOf(p, 18) + '」是什么 / 包括哪些？**');
         out.push('');
         out.push('答：①' + p + '；②结合本节正文的限定条件判断；③答题时先写结论再补依据。');
         out.push('');
@@ -9284,13 +9418,13 @@ App.Agents = (function () {
       out.push('| 要点 | 关键词 | 常见考法 |');
       out.push('| --- | --- | --- |');
       pts.forEach(function (p, i) {
-        out.push('| ' + p.slice(0, 32) + ' | ' + p.slice(0, 6) + ' | ' + (i === 0 ? '「下列属于…的是」' : '判断题 / 多选题') + ' |');
+        out.push('| ' + p + ' | ' + kwOf(p, 10) + ' | ' + (i === 0 ? '「下列属于…的是」' : '判断题 / 多选题') + ' |');
       });
       out.push('');
       out.push('这张表怎么记：先记住表头三列的顺序，再横向记每一行的关键词。');
     } else if (t.id === 'heima') {
       pts.forEach(function (p, i) {
-        out.push('**知识点' + ['一', '二', '三', '四', '五', '六', '七'][i] + '：' + p.slice(0, 18) + '**' +
+        out.push('**知识点' + ['一', '二', '三', '四', '五', '六', '七'][i] + '：' + kwOf(p, 18) + '**' +
           (i < 2 ? '★★★★★' : '★★★'));
         out.push('');
       });
@@ -9299,7 +9433,7 @@ App.Agents = (function () {
       out.push('| 知识点 | 考频 | 记法 |');
       out.push('| --- | --- | --- |');
       pts.forEach(function (p, i) {
-        out.push('| ' + String(p).slice(0, 22) + ' | ' + (i < 2 ? '★★★★★' : '★★★') +
+        out.push('| ' + kwOf(p, 16) + ' | ' + (i < 2 ? '★★★★★' : '★★★') +
           ' | ' + (i === 0 ? '必背原句' : '记关键词') + ' |');
       });
       out.push('');
@@ -9308,14 +9442,14 @@ App.Agents = (function () {
       if (ex) {
         out.push('**【习题】**' + ex.q);
         out.push('');
-        out.push('**【讲评】**这题考的是本节第 ' + 1 + ' 个考点「' + (pts[0] || '').slice(0, 16) + '」。');
+        out.push('**【讲评】**这题考的是本节第 ' + 1 + ' 个考点「' + kwOf(pts[0] || '', 16) + '」。');
         out.push('');
         out.push('**【错因】**多半错在：①把相近概念混用；②漏看题干里的限定词；③把范围扩大了。');
         out.push('');
         out.push('**【答案】**' + ex.a + (ex.e ? '　（' + ex.e + '）' : ''));
       } else {
         out.push('**【本节易错点】**');
-        pts.slice(0, 3).forEach(function (p, i) { out.push((i + 1) + '. ' + p.slice(0, 30) + '…　→ 常见错法：把范围扩大或把主体换掉。'); });
+        pts.slice(0, 3).forEach(function (p, i) { out.push((i + 1) + '. ' + p + '　→ 常见错法：把范围扩大或把主体换掉。'); });
         out.push('');
         out.push('> 题库里本节没有配套题，这里只按考点给易错方向，不编题号。');
       }
@@ -9323,7 +9457,7 @@ App.Agents = (function () {
       out.push('**【下次怎么防】**先圈题干里的限定词，再回考点原文对一遍范围。');
     } else if (t.id === 'liumeili') {
       pts.slice(0, 4).forEach(function (p, i) {
-        out.push('**考点' + ['一', '二', '三', '四'][i] + '：' + p.slice(0, 20) + '**');
+        out.push('**考点' + ['一', '二', '三', '四'][i] + '：' + kwOf(p, 18) + '**');
         out.push('');
         out.push('　' + p);
         out.push('');
@@ -9332,7 +9466,7 @@ App.Agents = (function () {
       out.push('');
       out.push('| 层次 | 要点 |');
       out.push('| --- | --- |');
-      pts.slice(0, 5).forEach(function (p) { out.push('| ' + p.slice(0, 8) + ' | ' + p.slice(0, 40) + ' |'); });
+      pts.slice(0, 5).forEach(function (p) { out.push('| ' + kwOf(p, 8) + ' | ' + p + ' |'); });
       out.push('');
       out.push('**本讲小结**：本节共 ' + pts.length + ' 条，考试按「条目顺序 + 层次归属」出题，先记顺序再记内容。');
     } else if (t.id === 'mystery') {
@@ -9341,7 +9475,7 @@ App.Agents = (function () {
       out.push('');
       out.push('**最可能怎么考**：');
       pts.slice(0, 3).forEach(function (p, i) {
-        out.push((i + 1) + '. ' + p.slice(0, 30) + '…　→ 干扰项一般设在「范围扩大 / 主体换人 / 条件缺失」这三处。');
+        out.push((i + 1) + '. ' + p + '　→ 干扰项一般设在「范围扩大 / 主体换人 / 条件缺失」这三处。');
       });
       out.push('');
       out.push('**变式**：把上面任一条改成「不属于」的问法，就是另一道题。');
