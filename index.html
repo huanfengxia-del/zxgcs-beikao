@@ -23,12 +23,20 @@
   } catch (e) {}
 })();
 
-/* 注册 Service Worker：手机第二次打开不再重下 8MB 页面（隧道带宽小） */
+/* 注册 Service Worker：手机第二次打开不再重下 8MB 页面（隧道带宽小）
+   有新版本接管时自动刷一次，避免用户一直看到旧版面（sessionStorage 防循环） */
 (function () {
   if (!location.protocol.startsWith('http')) return;
   if (!('serviceWorker' in navigator)) return;
+  var hadController = !!navigator.serviceWorker.controller;
   window.addEventListener('load', function () {
     navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function () {});
+  });
+  navigator.serviceWorker.addEventListener('controllerchange', function () {
+    if (!hadController) return;                       /* 首次安装不刷，省一次 8MB */
+    if (sessionStorage.getItem('sw_swap') === '1') return;
+    sessionStorage.setItem('sw_swap', '1');
+    location.reload();
   });
 })();
 </script>
