@@ -30,14 +30,18 @@ self.addEventListener('fetch', (e) => {
   const isDoc = req.mode === 'navigate' || (req.headers.get('accept') || '').indexOf('text/html') >= 0;
 
   if (isDoc) {
+    /* 先给缓存（隧道带宽小，8MB 首屏重下要 30 秒），同时后台拉新版写回缓存 */
     e.respondWith(
-      fetch(req)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(VER).then((c) => c.put(req, copy)).catch(() => {});
-          return res;
-        })
-        .catch(() => caches.match(req).then((hit) => hit || caches.match('./index.html')))
+      caches.match(req).then((hit) => {
+        const net = fetch(req)
+          .then((res) => {
+            const copy = res.clone();
+            caches.open(VER).then((c) => c.put(req, copy)).catch(() => {});
+            return res;
+          })
+          .catch(() => hit || caches.match('./index.html'));
+        return hit || net;
+      })
     );
     return;
   }
