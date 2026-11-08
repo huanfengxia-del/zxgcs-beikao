@@ -375,7 +375,13 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 0; }
   gap: 11px;
   padding: 20px 18px 18px;
   border-bottom: 1px solid var(--line-2);
+  text-decoration: none;
+  color: inherit;
+  transition: background var(--t-fast);
 }
+.brand:hover { background: var(--paper-2); }
+.brand:hover .brand-txt b { color: var(--blue-deep); }
+.brand:hover .brand-mark { border-color: var(--blue); color: var(--blue-deep); }
 .brand-mark {
   width: 30px; height: 30px; flex: none;
   border: 1px solid var(--ink);
@@ -2351,17 +2357,20 @@ a.stat-link .d { color: var(--blue); }
 
 /* ---------- 学习热力图 ---------- */
 .heat-wrap { display: flex; flex-direction: column; gap: 6px; }
-.heat-row { display: flex; gap: 6px; align-items: flex-start; }
-.heat-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.heat-row { display: flex; gap: 6px; align-items: stretch; }
+.heat-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 auto; }
 .heat-dow {
-  display: grid; gap: 3px; padding-top: 0;
-  font-family: var(--mono); font-size: 9px; color: var(--ink-4); line-height: 12px;
+  display: grid; grid-template-rows: repeat(7, 1fr); gap: 3px;
+  font-family: var(--mono); font-size: 9px; color: var(--ink-4);
+  align-items: center; justify-items: end;
 }
-.heat-dow span { height: 12px; display: block; }
-.heat { display: grid; grid-auto-flow: column; gap: 3px; justify-content: start; }
+.heat-dow span { display: block; line-height: 1; }
+.heat { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; justify-content: stretch; width: 100%; }
 .heat .col { display: grid; gap: 3px; }
 .heat i {
-  width: 12px; height: 12px; border-radius: 1px;
+  width: 100%; max-width: 26px; height: auto; aspect-ratio: 1;
+  justify-self: center;
+  border-radius: 1px;
   background: var(--paper-2); border: 1px solid var(--line);
   display: block; transition: transform 90ms ease;
 }
@@ -2372,10 +2381,11 @@ a.stat-link .d { color: var(--blue); }
 .heat i.l4 { background: var(--blue); border-color: transparent; }
 .heat i.future { opacity: 0.3; }
 .heat-months {
-  display: grid; grid-auto-flow: column; gap: 3px; justify-content: start;
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
+  gap: 3px; justify-content: stretch; width: 100%;
   font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em; color: var(--ink-4);
 }
-.heat-months span { width: 12px; white-space: nowrap; overflow: visible; }
+.heat-months span { white-space: nowrap; overflow: visible; }
 
 /* ---------- 四科掌握度 ---------- */
 .mst { display: flex; flex-direction: column; gap: 5px; }
@@ -2391,7 +2401,7 @@ a.stat-link .d { color: var(--blue); }
 .mst-ft span + span::before { content: "·"; margin-right: 12px; color: var(--line-2); }
 
 /* ---------- 每日投入 ---------- */
-.bars-plot { position: relative; }
+.bars-plot { position: relative; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 128px; }
 .bars-goal {
   position: absolute; inset: 0 0 auto 0; z-index: 2; pointer-events: none;
   border-top: 1px dashed color-mix(in srgb, var(--amber) 55%, transparent);
@@ -2403,7 +2413,7 @@ a.stat-link .d { color: var(--blue); }
 }
 .barchart {
   display: flex; align-items: flex-end; gap: 4px;
-  height: 128px; padding-top: 16px;
+  flex: 1 1 auto; min-height: 128px; padding-top: 16px;
   border-bottom: 1px solid var(--line-2);
   position: relative;
 }
@@ -2430,6 +2440,48 @@ a.stat-link .d { color: var(--blue); }
   font-size: 9px; letter-spacing: 0.02em; color: var(--ink-4);
 }
 .bars-axis span { flex: 1 1 0; min-width: 0; text-align: center; }
+
+/* ---------- 看板瀑布两列（避免等高留白） ---------- */
+.dash-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.dash-col { display: grid; gap: 16px; min-width: 0; align-content: start; }
+.dash-col > .sheet { margin: 0; }
+
+/* 四科掌握度：窄列时雷达在上、列表在下 */
+.mst-wrap {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px 22px;
+  align-items: center;
+}
+.mst-list { display: grid; gap: 13px; min-width: 0; }
+@container (max-width: 520px) {
+  .mst-wrap { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+  .mst-list { width: 100%; }
+}
+@media (max-width: 1180px) {
+  .mst-wrap { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 14px; }
+  .mst-list { width: 100%; }
+}
+@media (max-width: 860px) {
+  .dash-cols { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* 组卷页：章节范围很长，放进固定高度滚动区，避免左栏被拉成一整屏 */
+.pick-scroll {
+  max-height: 342px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  scrollbar-width: thin;
+}
+.pick-scroll::-webkit-scrollbar { width: 6px; }
+.pick-scroll::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 3px; }
+.pick-scroll::-webkit-scrollbar-track { background: transparent; }
 
 /* ===== 07-reader.css ===== */
 /* ============================================================
@@ -3013,6 +3065,14 @@ html { -webkit-text-size-adjust: 100%; }
   .sheet + .sheet { margin-top: 12px; }
   .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stats-row.srow-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stats-row.srow-5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stats-row.srow-5 .stat:last-child { grid-column: 1 / -1; border-top: 1px solid var(--line); }
+  .dash-cols { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .dash-col { gap: 12px; }
+  .heat { grid-auto-columns: minmax(0, 1fr); }
+  .heat i { max-width: 20px; }
+  .barchart { min-height: 96px; }
+  .mst-wrap { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 14px; }
   .stat { padding: 11px 12px; }
   .stat:nth-child(2n) { border-right: 0; }
   .stat:nth-child(n + 3) { border-top: 1px solid var(--line); }
@@ -4382,10 +4442,10 @@ App.UI = (function () {
     const st = S.state;
     const theme = document.documentElement.getAttribute('data-theme');
     const rail = [
-      '<div class="brand">',
+      '<a class="brand" href="#/today" title="回到作战台">',
       '  <div class="brand-mark">咨</div>',
       '  <div class="brand-txt"><b>咨询工程师备考台</b><span>2027 EXAM DESK</span></div>',
-      '</div>',
+      '</a>',
       '<nav class="rail-nav" id="railNav">',
       '  <div class="grp">学习</div>'
     ];
@@ -6704,7 +6764,8 @@ App.Views = App.Views || {};
     const c = SETUP.course === 'mix' ? null : D.course(SETUP.course);
     const chPts = chPtsMap();
     const h = [];
-    h.push('<div class="grid2">');
+    h.push('<div class="dash-cols">');
+    h.push('<div class="dash-col">');
 
     /* 左：设置 */
     h.push('<section class="sheet"><div class="sheet-hd"><div><h2>组卷条件</h2><div class="hd-sub">BUILD A SET</div></div></div><div class="sheet-bd">');
@@ -6719,7 +6780,7 @@ App.Views = App.Views || {};
     h.push('</div></div>');
 
     if (c) {
-      h.push('<div class="field"><label>章节范围 <span class="faint">（按分值排序，不选=全部）</span></label><div class="pick-grid">');
+      h.push('<div class="field"><label>章节范围 <span class="faint">（按分值排序，不选=全部 · 可滚动）</span></label><div class="pick-grid pick-scroll">');
       const papers = (D.qByCourse.get(c.key) || []).filter((q) => !q.ch);
       if (papers.length) {
         const on0 = SETUP.chapters.indexOf(0) >= 0;
@@ -6738,6 +6799,12 @@ App.Views = App.Views || {};
       h.push('</div></div>');
     }
 
+    h.push('</div></section>');
+
+    /* 右：组卷方式 + 概览 */
+    h.push('</div><div class="dash-col">');
+
+    h.push('<section class="sheet"><div class="sheet-hd"><div><h2>组卷方式</h2><div class="hd-sub">HOW TO PICK</div></div></div><div class="sheet-bd">');
     h.push('<div class="grid2" style="gap:12px">');
     h.push('<div class="field"><label>题型</label><div class="seg-ctl" data-seg="type">' +
       [['all', '全部'], ['single', '单选'], ['multi', '多选'], ['essay', '主观']].map((t) =>
@@ -6750,14 +6817,11 @@ App.Views = App.Views || {};
       [['all', '常规'], ['fresh', '没做过的'], ['wrong', '错题本'], ['due', '今日待复习']].map((t) =>
         '<button data-v="' + t[0] + '" class="' + (SETUP.scope === t[0] ? 'on' : '') + '">' + t[1] + '</button>').join('') + '</div></div>');
 
-    h.push('<div style="display:flex;gap:8px;margin-top:16px">');
+    h.push('<div style="display:flex;gap:8px;margin-top:14px">');
     h.push('<button class="btn primary lg" data-act="start" style="flex:1">开始作答</button>');
     h.push('<button class="btn lg" data-act="mock">模拟整卷</button>');
     h.push('</div>');
     h.push('</div></section>');
-
-    /* 右：概览 */
-    h.push('<div style="display:grid;gap:16px;align-content:start">');
     const testList = buildList();
     h.push('<section class="sheet"><div class="sheet-hd"><div><h2>本次将要作答</h2><div class="hd-sub">PREVIEW · ' + testList.length + ' 题</div></div></div>');
     h.push('<div class="sheet-bd" style="padding:0">');
@@ -6799,7 +6863,7 @@ App.Views = App.Views || {};
 
     const ov = S.overallAccuracy();
     h.push('<section class="sheet"><div class="sheet-hd"><div><h2>我的作答画像</h2><div class="hd-sub">PROFILE</div></div></div><div class="sheet-bd">');
-    h.push('<div class="stats-row" style="grid-template-columns:repeat(3,1fr)">' +
+    h.push('<div class="stats-row srow-3">' +
       '<div class="stat"><span class="k">总正确率</span><b class="num">' + (ov.acc === null ? '—' : ov.acc + '<i>%</i>') + '</b></div>' +
       '<div class="stat"><span class="k">作答量</span><b class="num">' + ov.t + '</b></div>' +
       '<div class="stat"><span class="k">错题本</span><b class="num">' + S.state.wrong.length + '</b></div></div>');
@@ -7325,7 +7389,8 @@ App.Views = App.Views || {};
       h.push('<div class="stat"><span class="k">复习进度</span><b class="num">' + (all.length ? Math.round(((all.length - due.length) / all.length) * 100) + '<i>%</i>' : '—<i>%</i>') + '</b><span class="s">本周已消化</span></div>');
       h.push('</div>');
 
-      h.push('<div class="grid2" style="align-items:start">');
+      h.push('<div class="dash-cols">');
+      h.push('<div class="dash-col">');
 
       /* 主列表 */
       h.push('<section class="sheet"><div class="sheet-hd"><div><h2>待处理</h2><div class="hd-sub">QUEUE · ' + list.length + ' 题 · 按分值排序</div></div>' +
@@ -7370,8 +7435,18 @@ App.Views = App.Views || {};
       }
       h.push('</div></section>');
 
+      h.push('<section class="sheet"><div class="sheet-hd"><div><h2>沉淀分布</h2><div class="hd-sub">MEMORY BOXES</div></div></div><div class="sheet-bd">');
+      for (let b = 1; b <= 6; b++) {
+        const pct = all.length ? Math.round((boxes[b] / all.length) * 100) : 0;
+        h.push('<div style="display:grid;grid-template-columns:34px 1fr 34px;gap:8px;align-items:center;margin-bottom:7px">' +
+          '<span class="tiny mono faint">B' + b + '</span>' + UI.meter(pct, b >= 4 ? 'green' : b === 1 ? 'red' : '') +
+          '<span class="tiny mono" style="text-align:right">' + boxes[b] + '</span></div>');
+      }
+      h.push('<div class="tiny faint" style="margin-top:10px">B1 最生，B6 已熟；右列数字是题量。</div>');
+      h.push('</div></section>');
+
       /* 右栏 */
-      h.push('<div style="display:grid;gap:16px;align-content:start">');
+      h.push('</div><div class="dash-col">');
       h.push('<section class="sheet"><div class="sheet-hd"><div><h2>错题分值分布</h2><div class="hd-sub">BY SCORE · 高分章错得多先补</div></div></div><div class="sheet-bd">');
       if (!riskList.length) {
         h.push('<div class="tiny faint">还没有可统计的错题。</div>');
@@ -7392,16 +7467,6 @@ App.Views = App.Views || {};
       h.push('<button class="btn primary block lg" data-act="review-due" ' + (dueIn(filter).length ? '' : 'disabled') + '>复习今日待办 ' + dueIn(filter).length + ' 题</button>');
       h.push('<button class="btn block" style="margin-top:8px" data-act="review-all" ' + (list.length ? '' : 'disabled') + '>把当前 ' + list.length + ' 题全刷一遍</button>');
       h.push('<button class="btn block ghost" style="margin-top:8px" data-act="review-hard">只刷档位 ≤2 的硬骨头</button>');
-      h.push('</div></section>');
-
-      h.push('<section class="sheet"><div class="sheet-hd"><div><h2>沉淀分布</h2><div class="hd-sub">MEMORY BOXES</div></div></div><div class="sheet-bd">');
-      for (let b = 1; b <= 6; b++) {
-        const pct = all.length ? Math.round((boxes[b] / all.length) * 100) : 0;
-        h.push('<div style="display:grid;grid-template-columns:34px 1fr 34px;gap:8px;align-items:center;margin-bottom:7px">' +
-          '<span class="tiny mono faint">B' + b + '</span>' + UI.meter(pct, b >= 4 ? 'green' : b === 1 ? 'red' : '') +
-          '<span class="tiny mono" style="text-align:right">' + boxes[b] + '</span></div>');
-      }
-      h.push('<div class="tiny faint" style="margin-top:10px">B1 最生，B6 已熟；右列数字是题量。</div>');
       h.push('</div></section>');
       h.push('</div>');
 
@@ -7578,7 +7643,8 @@ App.Views = App.Views || {};
       h.push('<div class="sheet" style="margin-bottom:16px"><div class="sheet-bd" style="padding:18px 20px">' + UI.ruler({ total: TOTAL, now: Math.max(1, now), legend: true }) + '</div></div>');
 
       /* 两栏：阶段 + 里程碑 */
-      h.push('<div class="grid2" style="align-items:start;margin-bottom:16px">');
+      h.push('<div class="dash-cols" style="margin-bottom:16px">');
+      h.push('<div class="dash-col">');
       h.push('<section class="sheet"><div class="sheet-hd"><div><h2>四个阶段</h2><div class="hd-sub">PHASES</div></div></div><div class="sheet-bd" style="padding:0">');
       (L.PHASES || []).forEach(function (p, i) {
         const from = (L.PHASES.slice(0, i).reduce((n, x) => n + (x.weeks || 0), 0)) + 1;
@@ -7614,6 +7680,7 @@ App.Views = App.Views || {};
         h.push('</div>');
       });
       h.push('</div></section>');
+      h.push('</div><div class="dash-col">');
 
       h.push('<section class="sheet"><div class="sheet-hd"><div><h2>里程碑</h2><div class="hd-sub">MILESTONES</div></div></div><div class="sheet-bd">');
       h.push('<div class="timeline">');
@@ -7627,6 +7694,7 @@ App.Views = App.Views || {};
           (m.n ? '<div class="desc">' + U.esc(m.n) + '</div>' : '') + '</div>');
       });
       h.push('</div></div></section>');
+      h.push('</div>');
       h.push('</div>');
 
       /* 周计划 */
@@ -7779,7 +7847,7 @@ App.Views = App.Views || {};
       const secTotal = D.courses.reduce((n, c) => n + c.sections.length, 0);
 
       const h = [];
-      h.push('<div class="stats-row" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px">');
+      h.push('<div class="stats-row srow-5" style="margin-bottom:16px">');
       h.push('<div class="stat"><div class="k">累计作答</div><b class="num">' + totalQ + '</b><span class="s">' + activeDays + ' 个学习日</span></div>');
       h.push('<div class="stat"><div class="k">总正确率</div><b class="num">' + (ov.acc === null ? '—' : ov.acc + '<i>%</i>') + '</b><span class="s">' + ov.r + ' / ' + ov.t + ' 答对</span></div>');
       h.push('<div class="stat"><div class="k">学习时长</div><b class="num">' + Math.round(mins / 60) + '<i>h</i></b><span class="s">合计 ' + mins + ' 分钟</span></div>');
@@ -7787,68 +7855,103 @@ App.Views = App.Views || {};
       h.push('<div class="stat"><div class="k">已读讲义</div><b class="num">' + Object.keys(st.read).length + '<i>节</i></b><span class="s">共 ' + secTotal + ' 节</span></div>');
       h.push('</div>');
 
-      /* 热力图 + 正确率趋势 */
-      h.push('<div class="grid2" style="align-items:start;margin-bottom:16px">');
-      h.push('<section class="sheet"><div class="sheet-hd"><div><h2>学习热力图</h2><div class="hd-sub">ACTIVITY · 近 18 周</div></div>' +
+      /* 两列瀑布布局：左列放矮卡，右列放高卡，避免行对齐留白 */
+      const colL = [], colR = [];
+
+      /* 左 1 · 学习热力图 */
+      colL.push('<section class="sheet"><div class="sheet-hd"><div><h2>学习热力图</h2><div class="hd-sub">ACTIVITY · 近 18 周</div></div>' +
         '<span class="tiny faint">深浅 = 当日时长与题量</span></div><div class="sheet-bd">' + UI.heat(st.logs, 18) + '</div></section>');
 
-      h.push('<section class="sheet"><div class="sheet-hd"><div><h2>正确率趋势</h2><div class="hd-sub">ACCURACY · 近 14 天</div></div>' +
-        '<span class="tiny faint">折线=正确率 · 柱=作答量</span></div><div class="sheet-bd">');
+      /* 左 2 · 每日投入 */
+      colL.push('<section class="sheet"><div class="sheet-hd"><div><h2>每日投入</h2><div class="hd-sub">MINUTES · 近 14 天</div></div></div><div class="sheet-bd">' +
+        minuteBars(14));
+      const arr14 = trend(14);
+      const sum14 = arr14.reduce((n, x) => n + x.min, 0);
+      const best14 = arr14.reduce((b, x) => (x.min > b.min ? x : b), arr14[0]);
+      colL.push('<div class="mst-ft" style="margin-top:10px"><span>14 天合计 ' + sum14 + ' 分钟</span>' +
+        '<span>日均 ' + Math.round(sum14 / 14) + ' 分钟</span>' +
+        '<span>最长 ' + best14.min + ' 分钟（' + best14.x + '）</span></div>');
+      colL.push('</div></section>');
+
+      /* 左 3 · 计划完成度 */
+      const TOTAL = L.TOTAL_WEEKS || 31;
+      let doneN = 0, allN = 0;
+      for (let w = 1; w <= TOTAL; w++) {
+        const arr = (L.WEEK_TASKS || [])[w - 1] || [];
+        arr.forEach(function (_, i) { allN++; if (S.isTaskDone(w, i)) doneN++; });
+      }
+      colL.push('<section class="sheet"><div class="sheet-hd"><div><h2>计划完成度</h2><div class="hd-sub">PLAN</div></div></div><div class="sheet-bd">' +
+        '<div style="display:flex;align-items:center;gap:18px">' + UI.ring(allN ? Math.round((doneN / allN) * 100) : 0, 104, 'var(--ink)', 'TASKS') +
+        '<div><div class="num" style="font-size:22px">' + doneN + '<i style="font-size:12px;color:var(--ink-4)"> / ' + allN + '</i></div>' +
+        '<div class="tiny faint">已完成任务数</div><a class="btn sm" style="margin-top:8px" href="#/plan">去计划表</a></div></div>' +
+        '</div></section>');
+
+      /* 左 4 · 最近练习 */
+      const sess = (st.sessions || []).slice(0, 6);
+      let sessHtml = '<section class="sheet"><div class="sheet-hd"><div><h2>最近练习</h2><div class="hd-sub">SESSIONS</div></div></div><div class="sheet-bd" style="padding:0">';
+      if (!sess.length) {
+        sessHtml += '<div class="empty"><b>还没有练习记录</b><a class="btn sm" href="#/quiz">开始第一组</a></div>';
+      } else {
+        sessHtml += '<div class="rows">';
+        sess.forEach(function (s) {
+          const acc = s.total ? Math.round((s.right / s.total) * 100) : 0;
+          const c = s.course ? D.course(s.course) : null;
+          sessHtml += '<div class="row" style="grid-template-columns:auto minmax(0,1fr) auto;cursor:default">' +
+            '<span class="badge ' + (acc >= 75 ? 'green' : acc >= 60 ? 'amber' : 'red') + '">' + acc + '%</span>' +
+            '<div><div class="t" style="font-size:13px">' + U.esc(c ? c.short : '练习') + ' · ' + (s.mode === 'review' ? '错题复习' : s.mode === 'mock' ? '模拟整卷' : '常规练习') + '</div>' +
+            '<div class="s mono">' + String(s.at || '').slice(0, 16).replace('T', ' ') + ' · ' + (s.minutes || 0) + ' 分钟</div></div>' +
+            '<span class="tiny mono faint">' + s.right + '/' + s.total + '</span></div>';
+        });
+        sessHtml += '</div>';
+      }
+      sessHtml += '</div></section>';
+      colL.push(sessHtml);
+
+      /* 右 1 · 正确率趋势 */
       const tr = trend(14).filter((x) => x.y !== null);
       const pts = tr.length ? tr : [{ x: '今天', y: 0 }];
       const ov2 = S.overallAccuracy();
-      h.push('<div class="acc-head"><span class="big">' + (ov2.acc === null ? '—' : ov2.acc) + '<i>%</i></span>' +
-        '<span class="cap">近 14 天总体正确率 · ' + ov2.r + '/' + ov2.t + ' 答对</span></div>');
-      h.push(UI.lineChart(pts, { height: 118 }));
-      h.push('<div class="tiny faint mono" style="margin:6px 0 10px">' + (tr.length ? '共 ' + tr.length + ' 天有作答记录' : '还没有作答记录，去刷一组题') + '</div>');
-      h.push('<div class="qbars">' + trend(14).map((x) => {
+      let trHtml = '<section class="sheet"><div class="sheet-hd"><div><h2>正确率趋势</h2><div class="hd-sub">ACCURACY · 近 14 天</div></div>' +
+        '<span class="tiny faint">折线=正确率 · 柱=作答量</span></div><div class="sheet-bd">';
+      trHtml += '<div class="acc-head"><span class="big">' + (ov2.acc === null ? '—' : ov2.acc) + '<i>%</i></span>' +
+        '<span class="cap">近 14 天总体正确率 · ' + ov2.r + '/' + ov2.t + ' 答对</span></div>';
+      trHtml += UI.lineChart(pts, { height: 118 });
+      trHtml += '<div class="tiny faint mono" style="margin:6px 0 10px">' + (tr.length ? '共 ' + tr.length + ' 天有作答记录' : '还没有作答记录，去刷一组题') + '</div>';
+      trHtml += '<div class="qbars">' + trend(14).map((x) => {
         const cxx = Math.max(1, ...trend(14).map((z) => z.q));
         return '<i class="' + (x.q ? '' : 'off') + '" style="height:' + (x.q ? Math.max(8, Math.round((x.q / cxx) * 100)) : 3) + '%" ' +
           'data-v="' + x.q + '题" title="' + x.x + ' · ' + x.q + ' 题"></i>';
-      }).join('') + '</div>');
-      h.push('<div class="qbars-axis">' + trend(14).map((x) => '<span>' + (x.q || '·') + '</span>').join('') + '</div>');
-      h.push('</div></section>');
-      h.push('</div>');
+      }).join('') + '</div>';
+      trHtml += '<div class="qbars-axis">' + trend(14).map((x) => '<span>' + (x.q || '·') + '</span>').join('') + '</div>';
+      trHtml += '</div></section>';
+      colR.push(trHtml);
 
-      /* 四科掌握度 + 每日投入 */
-      h.push('<div class="grid2" style="align-items:start;margin-bottom:16px">');
-      h.push('<section class="sheet"><div class="sheet-hd"><div><h2>四科掌握度</h2><div class="hd-sub">MASTERY</div></div></div><div class="sheet-bd">');
-      h.push('<div style="display:grid;grid-template-columns:auto 1fr;gap:10px 20px;align-items:center">');
-      h.push(UI.radar(D.courses.map(function (c) {
+      /* 右 2 · 四科掌握度 */
+      let mstHtml = '<section class="sheet"><div class="sheet-hd"><div><h2>四科掌握度</h2><div class="hd-sub">MASTERY</div></div></div><div class="sheet-bd">';
+      mstHtml += '<div class="mst-wrap">';
+      mstHtml += UI.radar(D.courses.map(function (c) {
         const p = S.courseProgress(c);
         const acc = S.accuracy(c.key);
         return { label: c.short, value: Math.round((p.readPct * 0.4) + ((acc === null ? 0 : acc) * 0.6)) };
-      }), { size: 236 }));
-      h.push('<div style="display:grid;gap:13px">');
+      }), { size: 236 });
+      mstHtml += '<div class="mst-list">';
       D.courses.forEach(function (c) {
         const p = S.courseProgress(c);
         const acc = S.accuracy(c.key);
         const score = Math.round((p.readPct * 0.4) + ((acc === null ? 0 : acc) * 0.6));
-        h.push('<div class="mst">' +
+        mstHtml += '<div class="mst">' +
           '<div class="mst-hd"><span class="dot" style="background:' + c.color + '"></span>' +
           '<b>' + U.esc(c.short) + '</b>' +
           '<span class="num mono">' + score + '</span><span class="unit mono">/100</span></div>' +
           UI.meter(score, acc !== null && acc < 60 ? 'red' : '') +
           '<div class="mst-ft"><span>已读 ' + p.read + '/' + p.secs + ' 节</span><span>作答 ' + p.ans + '/' + p.total + '</span><span>正确率 ' + (acc === null ? '—' : acc + '%') + '</span></div>' +
-          '</div>');
+          '</div>';
       });
-      h.push('</div></div>');
-      h.push('</div></section>');
+      mstHtml += '</div></div>';
+      mstHtml += '</div></section>';
+      colR.push(mstHtml);
 
-      h.push('<section class="sheet"><div class="sheet-hd"><div><h2>每日投入</h2><div class="hd-sub">MINUTES · 近 14 天</div></div></div><div class="sheet-bd">');
-      h.push(minuteBars(14));
-      /* 投入摘要：合计 / 日均 / 最长 */
-      const arr14 = trend(14);
-      const sum14 = arr14.reduce((n, x) => n + x.min, 0);
-      const best14 = arr14.reduce((b, x) => (x.min > b.min ? x : b), arr14[0]);
-      h.push('<div class="mst-ft" style="margin-top:10px"><span>14 天合计 ' + sum14 + ' 分钟</span>' +
-        '<span>日均 ' + Math.round(sum14 / 14) + ' 分钟</span>' +
-        '<span>最长 ' + best14.min + ' 分钟（' + best14.x + '）</span></div>');
-      h.push('</div></section>');
-      h.push('</div>');
-
-      /* 薄弱排行 + 计划完成 + 最近练习 */
-      h.push('<div class="grid2" style="align-items:start">');
+      /* 右 3 · 失分风险排行 */
       const weak = [];
       D.courses.forEach(function (c) {
         c.syllabus.forEach(function (ch) {
@@ -7862,62 +7965,33 @@ App.Views = App.Views || {};
         });
       });
       weak.sort(function (a, b) { return b.risk - a.risk; });
-      h.push('<section class="sheet"><div class="sheet-hd"><div><h2>失分风险排行</h2>' +
+      let weakHtml = '<section class="sheet"><div class="sheet-hd"><div><h2>失分风险排行</h2>' +
         '<div class="hd-sub">SCORE AT RISK · 分值 × 正确率缺口</div></div>' +
-        '<span class="tiny faint">分值高的章掉分最疼</span></div><div class="sheet-bd" style="padding:0">');
+        '<span class="tiny faint">分值高的章掉分最疼</span></div><div class="sheet-bd" style="padding:0">';
       if (!weak.length) {
-        h.push('<div class="empty"><b>数据还不够</b><span class="small">每章至少作答 2 题才会进入排行</span></div>');
+        weakHtml += '<div class="empty"><b>数据还不够</b><span class="small">每章至少作答 2 题才会进入排行</span></div>';
       } else {
-        h.push('<div class="rows">');
+        weakHtml += '<div class="rows">';
         weak.slice(0, 8).forEach(function (w) {
-          h.push('<a class="row link" href="#/quiz?course=' + w.c.key + '&ch=' + w.ch.id + '&scope=chapter">' +
+          weakHtml += '<a class="row link" href="#/quiz?course=' + w.c.key + '&ch=' + w.ch.id + '&scope=chapter">' +
             '<span class="badge ' + (w.m.acc !== null && w.m.acc < 50 ? 'red' : 'amber') + '">' + U.esc(w.c.short) + '</span>' +
             '<div><div class="t" style="font-size:13px">' + UI.lvBadge(w.ch.lv, { text: false }) + ' 第 ' + w.ch.id + ' 章 ' + U.esc(w.ch.name.slice(0, 20)) + '</div>' +
             '<div class="s">' + UI.pts(w.ch.pts) + ' 章 · 正确率 ' + (w.m.acc === null ? '—' : w.m.acc + '%') +
             ' · 作答 ' + w.m.done + ' 题 · 已读 ' + w.m.read + '/' + w.m.total + ' 节</div></div>' +
             '<span class="r" style="display:grid;grid-template-columns:auto;gap:1px;text-align:right">' +
             '<span class="ptsn ' + w.ch.lv + '">' + w.risk.toFixed(1) + '<small>分</small></span>' +
-            '<span class="tiny faint">风险</span></span></a>');
+            '<span class="tiny faint">风险</span></span></a>';
         });
-        h.push('</div>');
+        weakHtml += '</div>';
       }
-      h.push('</div></section>');
+      weakHtml += '</div></section>';
+      colR.push(weakHtml);
 
-      /* 计划完成 & 最近练习 */
-      h.push('<div style="display:grid;gap:16px">');
-      const TOTAL = L.TOTAL_WEEKS || 31;
-      let doneN = 0, allN = 0;
-      for (let w = 1; w <= TOTAL; w++) {
-        const arr = (L.WEEK_TASKS || [])[w - 1] || [];
-        arr.forEach(function (_, i) { allN++; if (S.isTaskDone(w, i)) doneN++; });
-      }
-      h.push('<section class="sheet"><div class="sheet-hd"><div><h2>计划完成度</h2><div class="hd-sub">PLAN</div></div></div><div class="sheet-bd">');
-      h.push('<div style="display:flex;align-items:center;gap:18px">' + UI.ring(allN ? Math.round((doneN / allN) * 100) : 0, 104, 'var(--ink)', 'TASKS') +
-        '<div><div class="num" style="font-size:22px">' + doneN + '<i style="font-size:12px;color:var(--ink-4)"> / ' + allN + '</i></div>' +
-        '<div class="tiny faint">已完成任务数</div><a class="btn sm" style="margin-top:8px" href="#/plan">去计划表</a></div></div>');
-      h.push('</div></section>');
+      h.push('<div class="dash-cols">' +
+        '<div class="dash-col">' + colL.join('') + '</div>' +
+        '<div class="dash-col">' + colR.join('') + '</div>' +
+        '</div>');
 
-      h.push('<section class="sheet"><div class="sheet-hd"><div><h2>最近练习</h2><div class="hd-sub">SESSIONS</div></div></div><div class="sheet-bd" style="padding:0">');
-      const sess = (st.sessions || []).slice(0, 6);
-      if (!sess.length) {
-        h.push('<div class="empty"><b>还没有练习记录</b><a class="btn sm" href="#/quiz">开始第一组</a></div>');
-      } else {
-        h.push('<div class="rows">');
-        sess.forEach(function (s) {
-          const acc = s.total ? Math.round((s.right / s.total) * 100) : 0;
-          const c = s.course ? D.course(s.course) : null;
-          h.push('<div class="row" style="grid-template-columns:auto minmax(0,1fr) auto;cursor:default">' +
-            '<span class="badge ' + (acc >= 75 ? 'green' : acc >= 60 ? 'amber' : 'red') + '">' + acc + '%</span>' +
-            '<div><div class="t" style="font-size:13px">' + U.esc(c ? c.short : '练习') + ' · ' + (s.mode === 'review' ? '错题复习' : s.mode === 'mock' ? '模拟整卷' : '常规练习') + '</div>' +
-            '<div class="s mono">' + String(s.at || '').slice(0, 16).replace('T', ' ') + ' · ' + (s.minutes || 0) + ' 分钟</div></div>' +
-            '<span class="tiny mono faint">' + s.right + '/' + s.total + '</span></div>');
-        });
-        h.push('</div>');
-      }
-      h.push('</div></section>');
-      h.push('</div>');
-
-      h.push('</div>');
       return h.join('');
     }
   };
@@ -8263,7 +8337,8 @@ App.Views = App.Views || {};
       route.right = UI.defaultRight();
 
       const h = [];
-      h.push('<div class="grid2" style="align-items:start">');
+      h.push('<div class="dash-cols">');
+      h.push('<div class="dash-col">');
 
       /* 模型引擎 */
       const md = App.Agents.mode();
@@ -8331,27 +8406,6 @@ App.Views = App.Views || {};
         ' <a href="#/agents">去智能体</a></div>');
       h.push('</div></section>');
 
-      /* 讲师人格 */
-      const curT = App.Teachers.resolve(st.teacher, '', '');
-      h.push('<section class="sheet"><div class="sheet-hd"><div><h2>讲师人格</h2><div class="hd-sub">LECTURERS</div></div>' +
-        '<span class="badge">' + (st.teacher ? '已指定' : '按科目自动') + '</span></div><div class="sheet-bd">');
-      h.push('<div class="t-grid">');
-      h.push('<button class="tcard ' + (st.teacher ? '' : 'on') + '" data-act="pick-teacher" data-v="">' +
-        '<span class="mk">自</span><b>自动</b><i>按提问科目挑讲师</i><span class="hint">四科各有一位主讲师，问到哪科就用哪科的讲义口径。</span></button>');
-      App.Teachers.list().forEach(function (t) {
-        h.push('<button class="tcard ' + (st.teacher === t.id ? 'on' : '') + '" data-act="pick-teacher" data-v="' + t.id + '">' +
-          '<span class="mk">' + t.mark + '</span><b>' + U.esc(t.name) + '</b><i>' + U.esc(t.school) + ' · ' + U.esc(t.tag) + '</i>' +
-          '<span class="hint">' + U.esc(t.note) + '</span>' +
-          '<span class="tc-courses">' + t.courses.map(function (k) { return '<em>' + U.esc(D.course(k).short) + '</em>'; }).join('') + '</span></button>');
-      });
-      h.push('</div>');
-      h.push('<div class="tiny faint" style="margin-top:12px;line-height:1.75">当前生效：<b>' + U.esc(curT.name + ' · ' + curT.school) + '</b>（' + U.esc(curT.tag) + '）。' +
-        '每位讲师的答题套路都取自他本人讲义的写法，随堂老师与智能体共用同一个人格。<a href="#/agents">去智能体试试</a></div>');
-      h.push('</div></section>');
-
-      /* 右列 */
-      h.push('<div style="display:grid;gap:16px">');
-
       h.push('<section class="sheet"><div class="sheet-hd"><div><h2>考试信息</h2><div class="hd-sub">EXAM</div></div></div><div class="sheet-bd">');
       h.push('<div class="field"><label>考试日期</label><input class="input" id="setExam" type="date" value="' + U.esc(st.examDate) + '">' +
         '<div class="hint">距今天 <b class="mono">' + UI.daysToExam() + '</b> 天</div></div>');
@@ -8375,6 +8429,27 @@ App.Views = App.Views || {};
       h.push('<div class="tiny faint" style="margin-top:10px">' +
         (st.migrated ? '已从 v1 数据迁移：' + U.esc(st.migrated) : '未检测到 v1 旧数据（首次使用即为空记录）') +
         ' · 存储占用约 ' + Math.max(1, Math.round(JSON.stringify(st).length / 1024)) + ' KB</div>');
+      h.push('</div></section>');
+
+      /* 右列 */
+      h.push('</div><div class="dash-col">');
+
+      /* 讲师人格 */
+      const curT = App.Teachers.resolve(st.teacher, '', '');
+      h.push('<section class="sheet"><div class="sheet-hd"><div><h2>讲师人格</h2><div class="hd-sub">LECTURERS</div></div>' +
+        '<span class="badge">' + (st.teacher ? '已指定' : '按科目自动') + '</span></div><div class="sheet-bd">');
+      h.push('<div class="t-grid">');
+      h.push('<button class="tcard ' + (st.teacher ? '' : 'on') + '" data-act="pick-teacher" data-v="">' +
+        '<span class="mk">自</span><b>自动</b><i>按提问科目挑讲师</i><span class="hint">四科各有一位主讲师，问到哪科就用哪科的讲义口径。</span></button>');
+      App.Teachers.list().forEach(function (t) {
+        h.push('<button class="tcard ' + (st.teacher === t.id ? 'on' : '') + '" data-act="pick-teacher" data-v="' + t.id + '">' +
+          '<span class="mk">' + t.mark + '</span><b>' + U.esc(t.name) + '</b><i>' + U.esc(t.school) + ' · ' + U.esc(t.tag) + '</i>' +
+          '<span class="hint">' + U.esc(t.note) + '</span>' +
+          '<span class="tc-courses">' + t.courses.map(function (k) { return '<em>' + U.esc(D.course(k).short) + '</em>'; }).join('') + '</span></button>');
+      });
+      h.push('</div>');
+      h.push('<div class="tiny faint" style="margin-top:12px;line-height:1.75">当前生效：<b>' + U.esc(curT.name + ' · ' + curT.school) + '</b>（' + U.esc(curT.tag) + '）。' +
+        '每位讲师的答题套路都取自他本人讲义的写法，随堂老师与智能体共用同一个人格。<a href="#/agents">去智能体试试</a></div>');
       h.push('</div></section>');
 
       h.push('<section class="sheet"><div class="sheet-hd"><div><h2>关于</h2><div class="hd-sub">ABOUT</div></div></div><div class="sheet-bd">');
