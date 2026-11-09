@@ -963,18 +963,18 @@ a.stat-link .d { color: var(--blue); }
 
 /* 分段控件 */
 .seg-ctl {
-  display: inline-flex; padding: 2px; gap: 2px;
-  border: 1px solid var(--line-2); border-radius: var(--r);
+  display: inline-flex; padding: 3px; gap: 3px;
+  border: 1px solid var(--line); border-radius: var(--r-pill);
   background: var(--paper-2);
 }
 .seg-ctl button {
-  height: 26px; padding: 0 11px; border-radius: 2px;
+  height: 26px; padding: 0 12px; border-radius: var(--r-pill);
   font-size: 12px; color: var(--ink-3);
   display: inline-flex; align-items: center; gap: 5px;
   transition: all var(--t-fast);
 }
 .seg-ctl button:hover { color: var(--ink); }
-.seg-ctl button.on { background: var(--paper); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); }
+.seg-ctl button.on { background: var(--paper); color: var(--ink); font-weight: 600; box-shadow: var(--sh-1); }
 
 /* 标签页（讲义内） */
 .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
@@ -3296,6 +3296,23 @@ a.pill:hover { border-color: var(--line-2); background: var(--paper-2); text-dec
 .group-hd .gh-sub { font-size: 12px; color: var(--ink-4); }
 .group-hd .gh-r { margin-left: auto; display: flex; align-items: center; gap: 8px; }
 
+/* ---------- 其它页的页首：复用 .daybar 的呼吸 ---------- */
+.daybar.ph { padding-bottom: 16px; }
+.daybar.ph .ph-eyebrow {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  margin-bottom: 6px;
+}
+.daybar.ph h1 { font-size: 25px; }
+.daybar.ph h1 em { font-size: 12.5px; }
+
+/* ---------- 页头里塞了两排分段控件时，改成上下排 ---------- */
+.sheet-hd.hd-stack { align-items: flex-start; flex-wrap: wrap; }
+.sheet-hd.hd-stack > div:last-child { width: 100%; }
+
 /* 手机：日期条竖排、榜单数字收窄 */
 @media (max-width: 720px) {
   .daybar { padding: 16px 0 12px; gap: 12px; }
@@ -5292,6 +5309,32 @@ App.UI = (function () {
     return (n >= 10 ? Math.round(n * 10) / 10 : Math.round(n * 10) / 10) + (unit === false ? '' : ' 分');
   }
 
+  /* 页首节奏条：和作战台的 .daybar 同一口气（大标题 + 副行 + 右侧胶囊）
+     opts = { eyebrow, title, sub, pills:[{k,v,u,href,on}], note } */
+  function pageHead(opts) {
+    opts = opts || {};
+    const pills = (opts.pills || []).filter(Boolean);
+    let out = '<section class="daybar ph">';
+    out += '<div class="db-main">';
+    if (opts.eyebrow) out += '<div class="ph-eyebrow">' + opts.eyebrow + '</div>';
+    out += '<h1>' + (opts.title || '') + (opts.aside ? '<em>' + opts.aside + '</em>' : '') + '</h1>';
+    if (opts.sub) out += '<div class="db-sub">' + opts.sub + '</div>';
+    out += '</div>';
+    if (pills.length) {
+      out += '<div class="pill-row">';
+      pills.forEach(function (p) {
+        const tag = p.href ? 'a' : 'div';
+        out += '<' + tag + ' class="pill' + (p.on ? ' on' : '') + '"' +
+          (p.href ? ' href="' + p.href + '"' : '') + '>' +
+          '<i>' + p.k + '</i><b>' + p.v + '</b>' + (p.u ? '<span>' + p.u + '</span>' : '') +
+          '</' + tag + '>';
+      });
+      out += '</div>';
+    }
+    out += '</section>';
+    return out;
+  }
+
   /* 分值条：把 0–max 映射成一条细横条，用于章/节之间横向对比 */
   function ptsBar(v, max, lv) {
     const m = Math.max(1, Number(max) || 1);
@@ -5302,7 +5345,7 @@ App.UI = (function () {
   return {
     ROUTES, icon, buildShell, setNav, setSheet, defaultRight, ruler,
     toast, modal, closeModal, confirm, openPalette, closePalette, paletteOpen,
-    ring, lineChart, radar, heat, stars, meter, daysToExam,
+    ring, lineChart, radar, heat, stars, meter, daysToExam, pageHead,
     lvBadge, pts, ptsBar, LV_TONE
   };
 })();
@@ -5819,6 +5862,21 @@ App.Views = App.Views || {};
       route.title = '科目总览';
       route.meta = '四科 · 客观题 3 科 + 实务 1 科<span class="sep"></span>合格线均为 78 / 130 分';
       const h = [];
+      const allSecs = D.courses.reduce(function (n, c) { return n + c.sections.length; }, 0);
+      const allChs = D.courses.reduce(function (n, c) { return n + c.syllabus.length; }, 0);
+      h.push(UI.pageHead({
+        eyebrow: 'SUBJECTS · 科目总览',
+        title: '四门课，按分值分配时间',
+        aside: allChs + ' 章 · ' + allSecs + ' 节',
+        sub: '客观题 3 科 + 实务 1 科<span class="sep"></span>合格线均为 78 / 130 分' +
+          '<span class="sep"></span>卡片里的「分值集中度」按章分值画，越长越该先学',
+        pills: [
+          { k: '科目', v: D.courses.length, u: '科' },
+          { k: '章', v: allChs },
+          { k: '节', v: allSecs },
+          { k: '合格线', v: 78, u: '/130', on: true }
+        ]
+      }));
       h.push('<div class="subj-grid">');
       D.courses.forEach(function (c) {
         const p = S.courseProgress(c);
@@ -7421,6 +7479,20 @@ App.Views = App.Views || {};
     const c = SETUP.course === 'mix' ? null : D.course(SETUP.course);
     const chPts = chPtsMap();
     const h = [];
+    h.push(UI.pageHead({
+      eyebrow: 'QUIZ · 智能组卷',
+      title: '按薄弱点抽一组题',
+      aside: D.courses.reduce((n, x) => n + (D.qByCourse.get(x.key) || []).length, 0) + ' 题在库',
+      sub: '分值高的章权重更大' +
+        '<span class="sep"></span>当前 <b>' + U.esc(c ? c.name : '跨科混卷') + '</b>' +
+        '<span class="sep"></span>正确率缺口越大，抽中越多',
+      pills: [
+        { k: '题库', v: D.courses.reduce((n, x) => n + (D.qByCourse.get(x.key) || []).length, 0), u: '题' },
+        { k: '科目', v: c ? U.esc(c.short) : '混卷' },
+        { k: '错题', v: S.state.wrong.length, u: '题' },
+        { k: '待复习', v: S.dueReviews().length, u: '题', on: true }
+      ]
+    }));
     h.push('<div class="dash-cols">');
     h.push('<div class="dash-col">');
 
@@ -8038,6 +8110,19 @@ App.Views = App.Views || {};
       });
 
       const h = [];
+      h.push(UI.pageHead({
+        eyebrow: 'REVIEW · 错题本',
+        title: '把错过的题补回来',
+        aside: all.length + ' 题在册',
+        sub: '按间隔复习下沉档位' +
+          '<span class="sep"></span>今日待复习 <b>' + due.length + '</b> 题' +
+          '<span class="sep"></span>覆盖 <b>' + new Set(all.map((q) => q.course)).size + '</b> 科',
+        pills: [
+          { k: '错题', v: all.length },
+          { k: '待复习', v: due.length, on: due.length > 0 },
+          { k: '已答对', v: all.filter((q) => (st.quiz[q.qid] || {}).r > 0).length }
+        ]
+      }));
       h.push('<div class="stats-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">');
       h.push('<div class="stat"><span class="k">错题总数</span><b class="num">' + all.length + '</b><span class="s">覆盖 ' +
         new Set(all.map((q) => q.course)).size + ' 科</span></div>');
@@ -8050,7 +8135,7 @@ App.Views = App.Views || {};
       h.push('<div class="dash-col">');
 
       /* 主列表 */
-      h.push('<section class="sheet"><div class="sheet-hd"><div><h2>待处理</h2><div class="hd-sub">QUEUE · ' + list.length + ' 题 · 按分值排序</div></div>' +
+      h.push('<section class="sheet"><div class="sheet-hd hd-stack"><div><h2>待处理</h2><div class="hd-sub">QUEUE · ' + list.length + ' 题 · 按分值排序</div></div>' +
         '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
         '<div class="seg-ctl sm" data-seg="order">');
       h.push('<button data-v="pts" class="' + (order === 'pts' ? 'on' : '') + '">按分值</button>');
@@ -8290,17 +8375,30 @@ App.Views = App.Views || {};
       }
 
       const h = [];
+      /* 页首节奏条：和作战台同一口气 */
+      h.push(UI.pageHead({
+        eyebrow: 'PLAN · 作战计划',
+        title: '三十一周，一周一周往前推',
+        aside: 'W' + Math.max(1, now) + ' / ' + TOTAL,
+        sub: '当前 <b>' + U.esc((phaseOf(Math.max(1, now)) || {}).name || '—') + '</b>' +
+          '<span class="sep"></span>本周覆盖 <b>' + U.esc(UI.pts(weekRefs(U.clamp(Math.max(1, now), 1, TOTAL)).reduce(function (n, r) { return n + r.pts; }, 0))) + '</b> 的章节' +
+          '<span class="sep"></span>任务完成 <b>' + doneN + ' / ' + allN + '</b>',
+        pills: [
+          { k: '当前周', v: 'W' + Math.max(1, now), u: '/' + TOTAL },
+          { k: '已完成', v: doneN, u: '项' },
+          { k: '总计', v: allN, u: '项' },
+          { k: '进度', v: allN ? Math.round((doneN / allN) * 100) : 0, u: '%', on: true }
+        ]
+      }));
       /* 本周覆盖了多少分的章节 */
       const curRefs = weekRefs(U.clamp(Math.max(1, now), 1, TOTAL));
       const curPts = curRefs.reduce(function (n, r) { return n + r.pts; }, 0);
-      h.push('<div class="stats-row srow-4" style="margin-bottom:14px">');
-      h.push('<div class="stat"><span class="k">当前周</span><b class="num">W' + Math.max(1, now) + '<i>/' + TOTAL + '</i></b><span class="s">' + weekRange(U.clamp(now, 1, TOTAL)) + '</span></div>');
-      h.push('<div class="stat"><span class="k">本周覆盖分值</span><b class="num">' + curPts.toFixed(1) + '<i>分</i></b><span class="s">' + curRefs.length + ' 个章节 · 单科 130 分制</span></div>');
-      h.push('<div class="stat"><span class="k">总任务</span><b class="num">' + doneN + '<i>/' + allN + '</i></b><span class="s">已完成 ' + (allN ? Math.round((doneN / allN) * 100) : 0) + '%</span></div>');
-      h.push('<div class="stat"><span class="k">距考试</span><b class="num">' + UI.daysToExam() + '<i>天</i></b><span class="s">' + U.fmtDate(S.state.examDate) + '</span></div>');
-      h.push('</div>');
-
-      h.push('<div class="sheet" style="margin-bottom:16px"><div class="sheet-bd" style="padding:18px 20px">' + UI.ruler({ total: TOTAL, now: Math.max(1, now), legend: true }) + '</div></div>');
+      /* 页首已经给了周次/任务数/进度，这里只留一页进度尺，不再重复四格统计 */
+      h.push('<div class="sheet" style="margin-bottom:16px"><div class="sheet-bd" style="padding:18px 20px">' +
+        UI.ruler({ total: TOTAL, now: Math.max(1, now), legend: true }) +
+        '<div class="mst-ft" style="margin-top:12px"><span>本周覆盖 ' + curPts.toFixed(1) + ' 分 · ' + curRefs.length + ' 个章节</span>' +
+        '<span>距考试 ' + UI.daysToExam() + ' 天（' + U.fmtDate(S.state.examDate) + '）</span></div>' +
+        '</div></div>');
 
       /* 两栏：阶段 + 里程碑 */
       h.push('<div class="dash-cols" style="margin-bottom:16px">');
@@ -8528,13 +8626,21 @@ App.Views = App.Views || {};
       const secTotal = D.courses.reduce((n, c) => n + c.sections.length, 0);
 
       const h = [];
-      h.push('<div class="stats-row srow-5" style="margin-bottom:16px">');
-      h.push('<div class="stat"><div class="k">累计作答</div><b class="num">' + totalQ + '</b><span class="s">' + activeDays + ' 个学习日</span></div>');
-      h.push('<div class="stat"><div class="k">总正确率</div><b class="num">' + (ov.acc === null ? '—' : ov.acc + '<i>%</i>') + '</b><span class="s">' + ov.r + ' / ' + ov.t + ' 答对</span></div>');
-      h.push('<div class="stat"><div class="k">学习时长</div><b class="num">' + Math.round(mins / 60) + '<i>h</i></b><span class="s">合计 ' + mins + ' 分钟</span></div>');
-      h.push('<div class="stat"><div class="k">连续天数</div><b class="num">' + S.streak() + '</b><span class="s">断签会归零</span></div>');
-      h.push('<div class="stat"><div class="k">已读讲义</div><b class="num">' + Object.keys(st.read).length + '<i>节</i></b><span class="s">共 ' + secTotal + ' 节</span></div>');
-      h.push('</div>');
+      h.push(UI.pageHead({
+        eyebrow: 'DASHBOARD · 学习看板',
+        title: '这段时间学得怎么样',
+        aside: activeDays + ' 个学习日',
+        sub: '累计作答 <b>' + totalQ + '</b> 题' +
+          '<span class="sep"></span>总正确率 <b>' + (ov.acc === null ? '—' : ov.acc + '%') + '</b>' +
+          '<span class="sep"></span>已读讲义 <b>' + Object.keys(st.read).length + '</b> / ' + secTotal + ' 节',
+        pills: [
+          { k: '作答', v: totalQ, u: '题' },
+          { k: '正确率', v: ov.acc === null ? '—' : ov.acc, u: '%' },
+          { k: '时长', v: Math.round(mins / 60), u: 'h' },
+          { k: '连续', v: S.streak(), u: '天', on: true }
+        ]
+      }));
+      /* 页首胶囊已给出这五个数，这里不再重复一排统计格 */
 
       /* 两列瀑布布局：左列放矮卡，右列放高卡，避免行对齐留白 */
       const colL = [], colR = [];
@@ -9018,6 +9124,20 @@ App.Views = App.Views || {};
       route.right = UI.defaultRight();
 
       const h = [];
+      const _md = App.Agents.mode();
+      h.push(UI.pageHead({
+        eyebrow: 'SETTINGS · 设置',
+        title: '把模型和考试信息定下来',
+        aside: _md === 'local' ? '纯本地推理' : (_md === 'magpie' ? '本机网关' : '自定义接口'),
+        sub: '考试 <b>' + U.esc(st.examDate || '—') + '</b>' +
+          '<span class="sep"></span>计划起点 <b>' + U.esc(st.planStart || '—') + '</b>' +
+          '<span class="sep"></span>距考 <b>' + Math.max(0, UI.daysToExam()) + '</b> 天',
+        pills: [
+          { k: '模式', v: _md === 'local' ? '本地' : '在线', on: _md !== 'local' },
+          { k: '老师', v: U.esc((App.Teachers.byId(st.teacher) || {}).name || '自动') },
+          { k: 'D-DAY', v: Math.max(0, UI.daysToExam()), u: '天' }
+        ]
+      }));
       h.push('<div class="dash-cols">');
       h.push('<div class="dash-col">');
 
