@@ -1537,14 +1537,16 @@ a.stat-link .d { color: var(--blue); }
 .reader .aside .toc-item.h2 { color: var(--ink-2); font-weight: 500; }
 .reader .aside .toc-item.h3 { padding-left: 20px; font-size: 11.8px; }
 .reader-body { padding: 0; min-width: 0; }
-.reader-hd { padding: 20px 26px 16px; border-bottom: 1px solid var(--line); background: var(--paper-2); }
+.reader-hd { padding: 22px 26px 16px; border-bottom: 1px solid var(--line-soft); background: var(--paper); }
 .reader-hd .crumbs {
   display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-  font-size: 11.5px; color: var(--ink-4); margin-bottom: 8px;
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-4); margin-bottom: 9px;
 }
 .reader-hd .crumbs a { color: var(--ink-3); }
-.reader-hd h1 { font-size: 21px; line-height: 1.4; letter-spacing: -0.01em; }
-.reader-hd .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 9px; align-items: center; }
+.reader-hd .crumbs a:hover { color: var(--blue-deep); }
+.reader-hd h1 { font-size: 25px; line-height: 1.32; letter-spacing: -0.02em; font-weight: 600; }
+.reader-hd .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; align-items: center; }
 .reader-main { padding: 22px 26px 40px; }
 .reader-main .prose { max-width: 46em; }
 
@@ -8925,6 +8927,21 @@ App.Views = App.Views || {};
   function agentHtml(cur, ag) {
       const chat = S.state.chat[cur] || [];
       const h = [];
+      const _md = A().mode();
+      const _tc = App.Teachers.resolve(S.state.teacher, '', '');
+      h.push(UI.pageHead({
+        eyebrow: 'AGENTS · 智能体',
+        title: '四个角色，读你的讲义和作答记录',
+        aside: ag.name,
+        sub: '当前讲师 <b>' + U.esc(_tc.name) + '</b>' +
+          '<span class="sep"></span>' + U.esc(_tc.school) +
+          '<span class="sep"></span>' + (_md === 'local' ? '本地推理（未接大模型）' : '已接模型'),
+        pills: [
+          { k: '角色', v: 4, u: '个' },
+          { k: '对话', v: Math.ceil(chat.length / 2), u: '轮' },
+          { k: '模型', v: _md === 'local' ? '本地' : '在线', on: _md !== 'local' }
+        ]
+      }));
       h.push('<div class="agents">');
 
       /* 左：角色列表 */
@@ -9073,7 +9090,10 @@ App.Views = App.Views || {};
         input.style.height = 'auto';
         input.style.height = Math.min(150, input.scrollHeight) + 'px';
       });
-      setTimeout(() => { try { input.focus(); } catch (e) {} }, 40);
+      /* 只在大屏自动聚焦输入框；手机上聚焦会把页面滚到底部，抬头（日期条）直接被顶出视野 */
+      if (window.innerWidth > 720) {
+        setTimeout(() => { try { input.focus({ preventScroll: true }); } catch (e) {} }, 40);
+      }
 
       root.addEventListener('click', function (e) {
         const el = e.target.closest('[data-act]');
